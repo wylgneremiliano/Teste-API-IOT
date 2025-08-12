@@ -1,9 +1,12 @@
 import express from "express";
 import crypto from 'crypto';
+import cors from 'cors';
+
 
 
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 
@@ -67,7 +70,7 @@ function signRequest(method: string, urlPath: string, query = '', body = '', acc
     return { sign, t };
 }
 
-async function sendCommand(deviceId: string, command: string, value: boolean) {
+async function sendCommand(deviceId: string, command: string, value: any) {
     const token = await getTuyaToken();
     const method = 'POST';
     const urlPath = `/v1.0/devices/${deviceId}/commands`;
@@ -137,6 +140,69 @@ app.post('/turn-off-light', async (_, res) => {
 });
 
 
+
+app.post('/sendCommand', async (req: any, res) => {
+    try {
+        const value = { "h": 0, "s": 0, "v": 100 }
+        const data = await sendCommand(DEVICE_ID_LAMPADA, "colour_data_v2", value);
+        res.json(data);
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+
+app.get('/device-status', async (_, res) => {
+    try {
+        const token = await getTuyaToken();
+        const method = 'GET';
+        const urlPath = `/v1.0/devices/${DEVICE_ID_LAMPADA}/status`;
+
+        const { sign, t } = signRequest(method, urlPath, '', '', token);
+
+        const headers = {
+            'client_id': ACCESS_ID,
+            'access_token': token,
+            'sign': sign,
+            't': t,
+            'sign_method': 'HMAC-SHA256',
+        };
+
+        const response = await fetch(`${BASE_URL}${urlPath}`, { method, headers });
+        const data = await response.json();
+
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/device-details', async (_, res) => {
+    try {
+        const token = await getTuyaToken();
+        const method = 'GET';
+        const urlPath = `/v1.0/devices/${DEVICE_ID_LAMPADA}`;
+
+        const { sign, t } = signRequest(method, urlPath, '', '', token);
+
+        const headers = {
+            'client_id': ACCESS_ID,
+            'access_token': token,
+            'sign': sign,
+            't': t,
+            'sign_method': 'HMAC-SHA256',
+        };
+
+        const response = await fetch(`${BASE_URL}${urlPath}`, { method, headers });
+        const data = await response.json();
+
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 
 
